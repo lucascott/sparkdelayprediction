@@ -9,20 +9,17 @@ import org.apache.spark.sql.DataFrame
 import sparkproject.modelling.CVRegressionModelPipeline
 import sparkproject.preprocessing.Preprocessing
 
-
 /**
   * @author Luca Scotton
   * @author Alejandro Gonzales Gonzales
   */
 object App extends SparkSessionWrapper {
 
-  def foo(x: Array[String]): String = x.foldLeft("")((a, b) => a + b)
-
   def main(args: Array[String]) {
 
     import spark.implicits._
 
-    println("Arguments = " + foo(args))
+    println("Reading file: " + args(0))
     Logger.getLogger("org").setLevel(Level.WARN)
 
     val flights = spark.read.format("csv")
@@ -100,7 +97,6 @@ object App extends SparkSessionWrapper {
 
     val metricsArr: Array[Double] = predArr.map(x => evaluator.evaluate(x))
     println(s"${Constants.metric}: " + metricsArr.mkString("\n"))
-
 
   }
 }
