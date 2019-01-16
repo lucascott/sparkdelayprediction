@@ -1,13 +1,16 @@
 package sparkproject.preprocessing
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import sparkproject.Constants
+import sparkproject.{Constants, SparkSessionWrapper}
 
-object Preprocessing {
+object Preprocessing extends SparkSessionWrapper {
 
-  def run(_ds: DataFrame, spark: SparkSession): DataFrame = {
+  def run(_ds: DataFrame): DataFrame = {
     import spark.implicits._
+
+    var ds = _ds.drop(Constants.prohibitedVariables: _*).drop(Constants.moreDroppedVariables: _*)
+
     // Converts from hhmm to total minutes from midnight
     val toMin = udf(
       (hhmmString: String) => {
@@ -19,11 +22,13 @@ object Preprocessing {
         hours * 60 + hhmmString.takeRight(2).toInt
       })
 
-    val ds = _ds.drop(Constants.prohibitedVariables: _*)
-      .withColumn("DepMin", toMin($"DepTime"))
+
+    ds = ds.withColumn("DepTime", toMin($"DepTime"))
+      .withColumn("DepTime", $"DepTime".cast("int")) //.drop("DepMin")
 
     // maps catergorical attributes to int from 0 to +inf
     val enc_ds: DataFrame = new EncodingPipeline(Constants.oneHotEncVariables: _*).fit(ds).transform(ds)
+      .drop(Constants.oneHotEncVariables: _*).drop(Constants.oneHotEncVariables.map(x => x + "Index"): _*)
     enc_ds
   }
 

@@ -2,7 +2,7 @@ package sparkproject
 
 import org.apache.spark.sql.SparkSession
 
-abstract class SparkSessionWrapper {
+trait SparkSessionWrapper {
 
   val spark: SparkSession =
     SparkSession
