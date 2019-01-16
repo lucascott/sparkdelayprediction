@@ -1,6 +1,7 @@
 package sparkproject
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.regression.LinearRegression
 import org.apache.spark.ml.tuning.ParamGridBuilder
@@ -61,19 +62,34 @@ object App extends SparkSessionWrapper {
 
     val Array(train: DataFrame, test: DataFrame) = Preprocessing.run(flights).randomSplit(Array(0.7, 0.3))
 
+    // Linear Regression
     val lr = new LinearRegression()
       .setLabelCol(Constants.labelVariable)
       .setPredictionCol(Constants.predictionCol)
       .setMaxIter(10)
 
-    val paramGrid = new ParamGridBuilder()
+    val pgLr = new ParamGridBuilder()
       .addGrid(lr.regParam, Array(0.3, 0.1))
       .addGrid(lr.elasticNetParam, Array(0.2, 0.5))
       .build()
 
-    val model1 = new CVRegressionModelPipeline(lr, paramGrid, 2).fit(train)
+    val lrModel = new CVRegressionModelPipeline(lr, pgLr, 5).fit(train)
 
-    val models = Array(model1)
+    // Logistic Regression
+    val logr = new LogisticRegression()
+      .setLabelCol(Constants.labelVariable)
+      .setPredictionCol(Constants.predictionCol)
+      .setMaxIter(10)
+
+    val pgLogr = new ParamGridBuilder()
+      .addGrid(logr.regParam, Array(0.3, 0.1))
+      .addGrid(logr.elasticNetParam, Array(0.2, 0.5))
+      .build()
+
+    val logrModel = new CVRegressionModelPipeline(lr, pgLogr, 5).fit(train)
+
+
+    val models = Array(lrModel, logrModel)
 
     val predArr: Array[DataFrame] = models.map(x => x.transform(test))
 
@@ -82,8 +98,8 @@ object App extends SparkSessionWrapper {
       .setPredictionCol(Constants.predictionCol)
       .setMetricName(Constants.metric)
 
-    val rmseArr: Array[Double] = predArr.map(x => evaluator.evaluate(x))
-    println(rmseArr.mkString("\n"))
+    val metricsArr: Array[Double] = predArr.map(x => evaluator.evaluate(x))
+    println(s"${Constants.metric}: " + metricsArr.mkString("\n"))
 
 
   }
