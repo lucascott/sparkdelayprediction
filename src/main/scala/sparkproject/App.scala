@@ -2,9 +2,10 @@ package sparkproject
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.evaluation.RegressionEvaluator
-import org.apache.spark.ml.regression.DecisionTreeRegressor
+import org.apache.spark.ml.regression.LinearRegression
+import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.sql.DataFrame
-import sparkproject.modelling.RegressionModelPipeline
+import sparkproject.modelling.CVRegressionModelPipeline
 import sparkproject.preprocessing.Preprocessing
 
 
@@ -57,11 +58,20 @@ object App extends SparkSessionWrapper {
       .withColumn("ArrDelay", $"ArrDelay".cast("int"))
 
     flights.printSchema()
-    flights.show
 
     val Array(train: DataFrame, test: DataFrame) = Preprocessing.run(flights).randomSplit(Array(0.7, 0.3))
 
-    val model1 = new RegressionModelPipeline(new DecisionTreeRegressor()).fit(train)
+    val lr = new LinearRegression()
+      .setLabelCol(Constants.labelVariable)
+      .setPredictionCol(Constants.predictionCol)
+      .setMaxIter(10)
+
+    val paramGrid = new ParamGridBuilder()
+      .addGrid(lr.regParam, Array(0.3, 0.1))
+      .addGrid(lr.elasticNetParam, Array(0.2, 0.5))
+      .build()
+
+    val model1 = new CVRegressionModelPipeline(lr, paramGrid, 2).fit(train)
 
     val models = Array(model1)
 
@@ -69,7 +79,7 @@ object App extends SparkSessionWrapper {
 
     val evaluator = new RegressionEvaluator()
       .setLabelCol(Constants.labelVariable)
-      .setPredictionCol("label")
+      .setPredictionCol(Constants.predictionCol)
       .setMetricName(Constants.metric)
 
     val rmseArr: Array[Double] = predArr.map(x => evaluator.evaluate(x))
