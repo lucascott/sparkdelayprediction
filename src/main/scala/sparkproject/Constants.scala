@@ -1,6 +1,7 @@
 package sparkproject
 
 object Constants {
+  val projectName = "Spark Flight Delay Project"
   val prohibitedVariables: Seq[String] = Seq("ArrTime", "ActualElapsedTime", "AirTime", "TaxiIn", "Diverted",
     "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay", "LateAircraftDelay")
   val moreDroppedVariables: Seq[String] = Seq("CRSDepTime", "CRSArrTime", "FlightNum", "TailNum", "CancellationCode")

@@ -7,8 +7,7 @@ trait SparkSessionWrapper {
   val spark: SparkSession =
     SparkSession
       .builder()
-      .appName("Spark Flight Delay Project")
+      .appName(Constants.projectName)
       .master("local[*]")
       .getOrCreate()
-
 }

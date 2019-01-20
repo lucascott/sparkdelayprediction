@@ -7,11 +7,12 @@ import sparkproject.{Constants, SparkSessionWrapper}
 object Preprocessing extends SparkSessionWrapper {
 
   def run(_ds: DataFrame): DataFrame = {
+
     import spark.implicits._
 
     var ds = _ds.drop(Constants.prohibitedVariables: _*).drop(Constants.moreDroppedVariables: _*)
 
-    ds = ds.filter('Diverted === 0)
+    ds = ds.filter('Diverted === 0).drop("Diverted")
     ds = ds.filter('Cancelled === 0).drop("Cancelled")
 
     val nullValuesDf = ds.filter('ArrDelay.isNull)
@@ -37,10 +38,7 @@ object Preprocessing extends SparkSessionWrapper {
     ds = ds.withColumn("DepTime", toMin('DepTime))
       .withColumn("DepTime", 'DepTime.cast("int"))
 
-    // maps catergorical attributes to int from 0 to +inf
-    val enc_ds: DataFrame = new EncodingPipeline(Constants.oneHotEncVariables: _*).fit(ds).transform(ds)
-      .drop(Constants.oneHotEncVariables: _*).drop(Constants.oneHotEncVariables.map(x => x + "Index"): _*)
-    enc_ds
+    ds
   }
 
 }

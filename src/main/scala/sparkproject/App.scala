@@ -1,25 +1,74 @@
 package sparkproject
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.classification.LogisticRegression
-import org.apache.spark.ml.evaluation.RegressionEvaluator
-import org.apache.spark.ml.regression.LinearRegression
-import org.apache.spark.ml.tuning.ParamGridBuilder
-import org.apache.spark.sql.DataFrame
-import sparkproject.modelling.CVRegressionModelPipeline
-import sparkproject.preprocessing.Preprocessing
+import scopt.OParser
 
 /**
   * @author Luca Scotton
   * @author Alejandro Gonzales Gonzales
   */
+case class Config(
+                   mode: String = "",
+                   input: String = "",
+                   export: String = "",
+                   model: String = "",
+                   output: String = ""
+                 )
+
 object App extends SparkSessionWrapper {
 
   def main(args: Array[String]) {
+    val builder = OParser.builder[Config]
+    val parser = {
+      import builder._
+      OParser.sequence(
+        programName(Constants.projectName),
+        head(Constants.projectName.toLowerCase().replace(" ", ""), "1.x"),
+        cmd("train")
+          .action((_, c) => c.copy(mode = "train"))
+          .text("Train model/models")
+          .children(
+            opt[String]("input")
+              .abbr("i").valueName("<dataset>")
+              .required()
+              .action((x, c) => c.copy(input = x))
+              .text("Input dataset filepath"),
+            opt[String]("export")
+              .abbr("e").valueName("<path>")
+              .action((x, c) => c.copy(export = x))
+              .text("Export model path")
+          ),
+        cmd("evaluate")
+          .action((_, c) => c.copy(mode = "evaluate"))
+          .text("Evaluate a model from disk")
+          .children(
+            opt[String]("model")
+              .abbr("m").valueName("<model>")
+              .required()
+              .action((x, c) => c.copy(model = x))
+              .text("model to import"),
+            opt[String]("input")
+              .abbr("i").valueName("<dataset>")
+              .required()
+              .action((x, c) => c.copy(input = x))
+              .text("Input dataset path"),
+            opt[String]("output")
+              .abbr("o").valueName("<path>")
+              .action((x, c) => c.copy(output = x))
+              .text("Output dataset path")
+          )
+      )
+    }
+    val conf = OParser.parse(parser, args, Config()) match {
+      case Some(config) =>
+        config
+      case _ =>
+        sys.exit(1)
+    }
 
     import spark.implicits._
-
-    println("Reading file: " + args(0))
+    println(s"[INFO] Running in ${conf.mode.toUpperCase} mode")
+    println("[INFO] Reading file: " + conf.input)
     Logger.getLogger("org").setLevel(Level.WARN)
 
     val flights = spark.read.format("csv")
@@ -27,7 +76,7 @@ object App extends SparkSessionWrapper {
       .option("nullValue", "NA")
       //.option("inferSchema", "true")
       .option("mode", "DROPMALFORMED")
-      .load(args(0))
+      .load(conf.input)
       .withColumn("Year", $"Year".cast("int"))
       .withColumn("Month", $"Month".cast("int"))
       .withColumn("DayofMonth", $"DayofMonth".cast("int"))
@@ -55,48 +104,14 @@ object App extends SparkSessionWrapper {
       // LABEL
       .withColumn("ArrDelay", $"ArrDelay".cast("int"))
 
-    flights.printSchema()
+    flights.printSchema
 
-    val Array(train: DataFrame, test: DataFrame) = Preprocessing.run(flights).randomSplit(Array(0.7, 0.3))
-
-    // Linear Regression
-    val lr = new LinearRegression()
-      .setLabelCol(Constants.labelVariable)
-      .setPredictionCol(Constants.predictionCol)
-      .setMaxIter(10)
-
-    val pgLr = new ParamGridBuilder()
-      .addGrid(lr.regParam, Array(0.3, 0.1))
-      .addGrid(lr.elasticNetParam, Array(0.2, 0.5))
-      .build()
-
-    val lrModel = new CVRegressionModelPipeline(lr, pgLr, 5).fit(train)
-
-    // Logistic Regression
-    val logr = new LogisticRegression()
-      .setLabelCol(Constants.labelVariable)
-      .setPredictionCol(Constants.predictionCol)
-      .setMaxIter(10)
-
-    val pgLogr = new ParamGridBuilder()
-      .addGrid(logr.regParam, Array(0.3, 0.1))
-      .addGrid(logr.elasticNetParam, Array(0.2, 0.5))
-      .build()
-
-    val logrModel = new CVRegressionModelPipeline(lr, pgLogr, 5).fit(train)
-
-
-    val models = Array(lrModel, logrModel)
-
-    val predArr: Array[DataFrame] = models.map(x => x.transform(test))
-
-    val evaluator = new RegressionEvaluator()
-      .setLabelCol(Constants.labelVariable)
-      .setPredictionCol(Constants.predictionCol)
-      .setMetricName(Constants.metric)
-
-    val metricsArr: Array[Double] = predArr.map(x => evaluator.evaluate(x))
-    println(s"${Constants.metric}: " + metricsArr.mkString("\n"))
+    if (conf.mode.equals("train")) {
+      TrainMode.run(flights, conf)
+    }
+    else if (conf.mode.equals("evaluate")) {
+      EvaluateMode.run(flights, conf)
+    }
 
   }
 }
