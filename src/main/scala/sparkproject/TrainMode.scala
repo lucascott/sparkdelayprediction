@@ -13,7 +13,7 @@ import sparkproject.preprocessing.Preprocessing
 
 object TrainMode extends SparkSessionWrapper {
   def run(flights: DataFrame, conf: Config): Unit = {
-    val Array(train: DataFrame, test: DataFrame) = Preprocessing.run(flights).randomSplit(Array(0.7, 0.3))
+    val Array(train: DataFrame, test: DataFrame) = Preprocessing.run(flights).randomSplit(Constants.trainTestSplit)
 
     // Linear Regression
     val lr = new LinearRegression()
@@ -26,7 +26,7 @@ object TrainMode extends SparkSessionWrapper {
       .addGrid(lr.elasticNetParam, Array(0.5))
       .build()
 
-    val lrModel = new CVRegressionModelPipeline(lr, pgLr, 5).fit(train).bestModel.asInstanceOf[PipelineModel]
+    val lrModel = new CVRegressionModelPipeline(lr, pgLr, Constants.cvFolds).fit(train).bestModel.asInstanceOf[PipelineModel]
 
     // Logistic Regression
     val logr = new LogisticRegression()
@@ -39,7 +39,7 @@ object TrainMode extends SparkSessionWrapper {
       .addGrid(logr.elasticNetParam, Array(0.2))
       .build()
 
-    val logrModel = new CVRegressionModelPipeline(lr, pgLogr, 5).fit(train).bestModel.asInstanceOf[PipelineModel]
+    val logrModel = new CVRegressionModelPipeline(lr, pgLogr, Constants.cvFolds).fit(train).bestModel.asInstanceOf[PipelineModel]
 
 
     val models = Array(lrModel, logrModel)

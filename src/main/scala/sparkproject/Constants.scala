@@ -11,4 +11,6 @@ object Constants {
   val labelVariable: String = "ArrDelay"
   val predictionCol = "prediction"
   val metric: String = "rmse"
+  val trainTestSplit = Array(0.7, 0.3)
+  val cvFolds = 5
 }
