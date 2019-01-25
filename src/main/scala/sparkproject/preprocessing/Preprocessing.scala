@@ -2,7 +2,8 @@ package sparkproject.preprocessing
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.udf
-import sparkproject.{Constants, SparkSessionWrapper}
+import sparkproject.Constants
+import sparkproject.core.SparkSessionWrapper
 
 object Preprocessing extends SparkSessionWrapper {
 

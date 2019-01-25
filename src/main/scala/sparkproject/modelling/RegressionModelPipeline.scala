@@ -1,6 +1,6 @@
 package sparkproject.modelling
 
-import org.apache.spark.ml.feature.{Normalizer, OneHotEncoderEstimator, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.feature.{Normalizer, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.{PipelineStage, _}
 import sparkproject.Constants
 
@@ -15,14 +15,15 @@ class RegressionModelPipeline extends Pipeline {
     val indexers: Array[StringIndexer] = Constants.oneHotEncVariables.map(s =>
       new StringIndexer()
         .setInputCol(s)
-        .setOutputCol(s + "Index")
+        .setOutputCol(s + "Enc")
         .setHandleInvalid("keep") // alteranative: "skip"
     ).toArray
-
+    /*
+    IN CASE REMEMBER TO INCLUDE IT IN THE STAGES
     val encoder: OneHotEncoderEstimator = new OneHotEncoderEstimator()
       .setInputCols(indexers.map(x => x.getOutputCol))
       .setOutputCols(Constants.oneHotEncVariables.map(x => x + "Enc").toArray)
-
+    */
     val assembler = new VectorAssembler()
       .setInputCols(cols)
       .setOutputCol("rawFeatures")
@@ -32,9 +33,9 @@ class RegressionModelPipeline extends Pipeline {
       .setOutputCol("features")
       .setP(1.0)
 
-    this.setStages(indexers ++ Array(encoder, assembler, normalizer, model))
+    this.setStages(indexers ++ Array(assembler, normalizer, model))
   }
 
-  def this(model: PipelineStage) = this(model, Constants.featureVariables.toArray) // TODO possible way, pass variables to remove
+  def this(model: PipelineStage) = this(model, Constants.featureVariables.toArray)
 
 }

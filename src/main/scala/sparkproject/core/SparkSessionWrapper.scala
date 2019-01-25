@@ -1,6 +1,7 @@
-package sparkproject
+package sparkproject.core
 
 import org.apache.spark.sql.SparkSession
+import sparkproject.Constants
 
 trait SparkSessionWrapper {
 

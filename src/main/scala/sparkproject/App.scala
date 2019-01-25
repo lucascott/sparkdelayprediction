@@ -1,7 +1,8 @@
 package sparkproject
 
 import org.apache.log4j.{Level, Logger}
-import scopt.OParser
+import sparkproject.core.{EvaluateMode, SparkSessionWrapper, TrainMode}
+import sparkproject.utils.ArgsParser
 
 /**
   * @author Luca Scotton
@@ -18,55 +19,11 @@ case class Config(
 object App extends SparkSessionWrapper {
 
   def main(args: Array[String]) {
-    val builder = OParser.builder[Config]
-    val parser = {
-      import builder._
-      OParser.sequence(
-        programName(Constants.projectName),
-        head(Constants.projectName.toLowerCase().replace(" ", ""), "1.x"),
-        cmd("train")
-          .action((_, c) => c.copy(mode = "train"))
-          .text("Train model/models")
-          .children(
-            opt[String]("input")
-              .abbr("i").valueName("<dataset>")
-              .required()
-              .action((x, c) => c.copy(input = x))
-              .text("Input dataset filepath"),
-            opt[String]("export")
-              .abbr("e").valueName("<path>")
-              .action((x, c) => c.copy(export = x))
-              .text("Export model path")
-          ),
-        cmd("evaluate")
-          .action((_, c) => c.copy(mode = "evaluate"))
-          .text("Evaluate a model from disk")
-          .children(
-            opt[String]("model")
-              .abbr("m").valueName("<model>")
-              .required()
-              .action((x, c) => c.copy(model = x))
-              .text("model to import"),
-            opt[String]("input")
-              .abbr("i").valueName("<dataset>")
-              .required()
-              .action((x, c) => c.copy(input = x))
-              .text("Input dataset path"),
-            opt[String]("output")
-              .abbr("o").valueName("<path>")
-              .action((x, c) => c.copy(output = x))
-              .text("Output dataset path")
-          )
-      )
-    }
-    val conf = OParser.parse(parser, args, Config()) match {
-      case Some(config) =>
-        config
-      case _ =>
-        sys.exit(1)
-    }
+
+    val conf = ArgsParser.parse(args)
 
     import spark.implicits._
+
     println(s"[INFO] Running in ${conf.mode.toUpperCase} mode")
     println("[INFO] Reading file: " + conf.input)
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -105,6 +62,8 @@ object App extends SparkSessionWrapper {
       .withColumn("ArrDelay", $"ArrDelay".cast("int"))
 
     flights.printSchema
+
+    flights.select("ArrDelay").withColumnRenamed("Diverted", "Div").printSchema
 
     if (conf.mode.equals("train")) {
       TrainMode.run(flights, conf)

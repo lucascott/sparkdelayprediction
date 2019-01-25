@@ -1,9 +1,10 @@
-package sparkproject
+package sparkproject.core
 
 import org.apache.spark.ml.PipelineModel
-import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.sql.DataFrame
+import sparkproject.evaluation.TestEvaluator
 import sparkproject.preprocessing.Preprocessing
+import sparkproject.{Config, Constants}
 
 object EvaluateMode extends SparkSessionWrapper {
   def run(flights: DataFrame, conf: Config): Unit = {
@@ -16,13 +17,7 @@ object EvaluateMode extends SparkSessionWrapper {
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
 
-    val evaluator = new RegressionEvaluator()
-      .setLabelCol(Constants.labelVariable)
-      .setPredictionCol(Constants.predictionCol)
-      .setMetricName(Constants.metric)
-
-    val metricsArr: Array[(String, Double)] = predArr.map(x => (x._1, evaluator.evaluate(x._2)))
-    metricsArr.foreach(x => println(s"${x._1} ${Constants.metric}: ${x._2}"))
+    TestEvaluator.evaluate(predArr)
 
     predArr.foreach(x => x._2.select(Constants.labelVariable, Constants.predictionCol).write
       .option("header", "true")
