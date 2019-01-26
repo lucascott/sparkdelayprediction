@@ -1,7 +1,7 @@
 package sparkproject
 
 import org.apache.log4j.{Level, Logger}
-import sparkproject.core.{EvaluateMode, SparkSessionWrapper, TrainMode}
+import sparkproject.core.{PredictMode, SparkSessionWrapper, TrainMode}
 import sparkproject.utils.ArgsParser
 
 /**
@@ -12,7 +12,7 @@ case class Config(
                    mode: String = "",
                    input: String = "",
                    export: String = "",
-                   predict: Boolean = false,
+                   eval: Boolean = false,
                    model: String = "",
                    output: String = ""
                  )
@@ -26,6 +26,8 @@ object App extends SparkSessionWrapper {
     import spark.implicits._
 
     println(s"[INFO] Running in ${conf.mode.toUpperCase} mode")
+    if (conf.mode == "predict") println(s"[INFO] Evaluation is set to ${if (conf.eval) "ON" else "OFF"}")
+    if (conf.mode == "train") println(s"[INFO] Models' exportation is set to ${if (!conf.export.isEmpty) "ON" else "OFF"}")
     println("[INFO] Reading file: " + conf.input)
     Logger.getLogger("org").setLevel(Level.WARN)
 
@@ -65,8 +67,8 @@ object App extends SparkSessionWrapper {
     if (conf.mode.equals("train")) {
       TrainMode.run(flights, conf)
     }
-    else if (conf.mode.equals("evaluate")) {
-      EvaluateMode.run(flights, conf)
+    else if (conf.mode.equals("predict")) {
+      PredictMode.run(flights, conf)
     }
 
   }

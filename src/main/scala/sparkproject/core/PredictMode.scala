@@ -6,7 +6,7 @@ import sparkproject.evaluation.TestEvaluator
 import sparkproject.preprocessing.Preprocessing
 import sparkproject.{Config, Constants}
 
-object EvaluateMode extends SparkSessionWrapper {
+object PredictMode extends SparkSessionWrapper {
   def run(flights: DataFrame, conf: Config): Unit = {
 
     val test: DataFrame = Preprocessing.run(flights)
@@ -17,10 +17,9 @@ object EvaluateMode extends SparkSessionWrapper {
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
 
+    if (!conf.eval) println("[INFO] Prediction only") else TestEvaluator.evaluate(predArr)
 
-    if (conf.predict) println("[INFO] Predict only.") else TestEvaluator.evaluate(predArr)
-
-    val outVars: Seq[String] = if (conf.predict) Seq(Constants.flightId, Constants.predictionCol) else Seq(Constants.flightId, Constants.labelVariable, Constants.predictionCol)
+    val outVars: Seq[String] = if (!conf.eval) Seq(Constants.flightId, Constants.predictionCol) else Seq(Constants.flightId, Constants.labelVariable, Constants.predictionCol)
     predArr.foreach(x => x._2
       .select(outVars.head, outVars.tail: _*)
       .write

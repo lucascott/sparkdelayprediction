@@ -29,14 +29,14 @@ object ArgsParser {
               .action((x, c) => c.copy(export = x))
               .text("Export model path")
           ),
-        cmd("evaluate")
-          .action((_, c) => c.copy(mode = "evaluate"))
-          .text("Evaluate a model from disk")
+        cmd("predict")
+          .action((_, c) => c.copy(mode = "predict"))
+          .text("Predict with model from disk")
           .children(
-            opt[Unit]("predict")
-              .abbr("p")
-              .action((_, c) => c.copy(predict = true))
-              .text("With the --predict flag only prediction is done"),
+            opt[Unit]("evaluate")
+              .abbr("e")
+              .action((_, c) => c.copy(eval = true))
+              .text("With the --evaluate flag evaluation is done"),
             opt[String]("model")
               .abbr("m").valueName("<model>")
               .required()
