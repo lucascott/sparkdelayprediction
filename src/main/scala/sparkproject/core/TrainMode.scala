@@ -22,7 +22,7 @@ object TrainMode extends SparkSessionWrapper {
 
     val pgLr = new ParamGridBuilder()
       .addGrid(lr.regParam, Array(0.1, 0.01))
-      .addGrid(lr.elasticNetParam, Array(0.5))
+      .addGrid(lr.elasticNetParam, Array(0.1, 0.5))
       .build()
 
     // Random Forest Regression
@@ -31,8 +31,8 @@ object TrainMode extends SparkSessionWrapper {
       .setPredictionCol(Constants.predictionCol)
 
     val pgrFor = new ParamGridBuilder()
-      .addGrid(rFor.numTrees, Array(2))
-      .addGrid(rFor.maxDepth, Array(20))
+      .addGrid(rFor.numTrees, Array(5))
+      .addGrid(rFor.maxDepth, Array(5, 10))
       .build()
 
     // Gradient Boosting Tree Regression
@@ -41,14 +41,14 @@ object TrainMode extends SparkSessionWrapper {
       .setPredictionCol(Constants.predictionCol)
 
     val pggBoost = new ParamGridBuilder()
-      .addGrid(gBoost.maxIter, Array(10))
-      .addGrid(gBoost.maxDepth, Array(5, 10, 20, 30))
+      .addGrid(gBoost.maxIter, Array(1, 2))
+      .addGrid(gBoost.maxDepth, Array(5, 10))
       .build()
 
     val models: Array[CrossValidatorModel] = RegressionTrainFactory.setTrainDataset(train).train(Array(
       (lr, pgLr),
-      (rFor, pgrFor),
-      (gBoost, pggBoost)
+      (rFor, pgrFor)
+      //(gBoost, pggBoost)
     ))
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
