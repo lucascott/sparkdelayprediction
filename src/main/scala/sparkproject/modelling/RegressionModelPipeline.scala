@@ -10,8 +10,8 @@ class RegressionModelPipeline extends Pipeline {
   def this(model: PipelineStage, cols: Array[String]) {
     this()
 
-    // maps catergorical attributes to int from 0 to +inf
-    // TODO check if we can overwrite the vars
+    // maps categorical attributes to int from 0 to +inf
+
     val indexers: Array[StringIndexer] = Constants.oneHotEncVariables.map(s =>
       new StringIndexer()
         .setInputCol(s)
