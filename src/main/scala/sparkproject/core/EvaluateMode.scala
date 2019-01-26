@@ -17,12 +17,16 @@ object EvaluateMode extends SparkSessionWrapper {
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
 
-    TestEvaluator.evaluate(predArr)
 
-    predArr.foreach(x => x._2.select(Constants.labelVariable, Constants.predictionCol).write
+    if (conf.predict) println("[INFO] Predict only.") else TestEvaluator.evaluate(predArr)
+
+    val outVars: Seq[String] = if (conf.predict) Seq(Constants.flightId, Constants.predictionCol) else Seq(Constants.flightId, Constants.labelVariable, Constants.predictionCol)
+    predArr.foreach(x => x._2
+      .select(outVars.head, outVars.tail: _*)
+      .write
       .option("header", "true")
       .mode("overwrite")
-      .csv(s"${conf.output}/${x._1}")
+      .csv(s"${conf.output}/${x._1}_pred")
     )
 
 

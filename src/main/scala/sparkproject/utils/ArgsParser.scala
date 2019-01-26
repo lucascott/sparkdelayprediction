@@ -33,11 +33,15 @@ object ArgsParser {
           .action((_, c) => c.copy(mode = "evaluate"))
           .text("Evaluate a model from disk")
           .children(
+            opt[Unit]("predict")
+              .abbr("p")
+              .action((_, c) => c.copy(predict = true))
+              .text("With the --predict flag only prediction is done"),
             opt[String]("model")
               .abbr("m").valueName("<model>")
               .required()
               .action((x, c) => c.copy(model = x))
-              .text("model to import"),
+              .text("Model to import"),
             opt[String]("input")
               .abbr("i").valueName("<dataset>")
               .required()

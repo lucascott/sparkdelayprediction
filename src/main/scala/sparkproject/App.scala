@@ -12,6 +12,7 @@ case class Config(
                    mode: String = "",
                    input: String = "",
                    export: String = "",
+                   predict: Boolean = false,
                    model: String = "",
                    output: String = ""
                  )

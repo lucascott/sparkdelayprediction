@@ -18,14 +18,12 @@ object Preprocessing extends SparkSessionWrapper {
 
     val nullValuesDf = ds.filter('ArrDelay.isNull)
     if (nullValuesDf.count() > 0) {
-      println("We still have null values! Please check why! We already have removed the expected source of nulls.")
+      println("[INFO] There are still have null values.")
       nullValuesDf.show()
-      println("Removing remaining null values")
+      println(s"[INFO] Removing rows with remaining null values on")
       ds = ds.filter('ArrDelay.isNotNull)
     }
-    else {
-      println("No more null values in target column")
-    }
+
     // Converts from hhmm to total minutes from midnight
     val toMin = udf((hhmmString: String) => {
       val hours =
