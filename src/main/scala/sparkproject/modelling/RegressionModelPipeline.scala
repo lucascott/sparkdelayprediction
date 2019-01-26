@@ -1,6 +1,6 @@
 package sparkproject.modelling
 
-import org.apache.spark.ml.feature.{Normalizer, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.feature.{StandardScaler, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.{PipelineStage, _}
 import sparkproject.Constants
 
@@ -16,10 +16,10 @@ class RegressionModelPipeline extends Pipeline {
       new StringIndexer()
         .setInputCol(s)
         .setOutputCol(s + "Enc")
-        .setHandleInvalid("keep") // alteranative: "skip"
+        .setHandleInvalid("keep") // alternative: "skip"
     ).toArray
     /*
-    IN CASE REMEMBER TO INCLUDE IT IN THE STAGES
+    //IN CASE REMEMBER TO INCLUDE IT IN THE STAGES
     val encoder: OneHotEncoderEstimator = new OneHotEncoderEstimator()
       .setInputCols(indexers.map(x => x.getOutputCol))
       .setOutputCols(Constants.oneHotEncVariables.map(x => x + "Enc").toArray)
@@ -28,12 +28,13 @@ class RegressionModelPipeline extends Pipeline {
       .setInputCols(cols)
       .setOutputCol("rawFeatures")
 
-    val normalizer = new Normalizer()
+    val standardScaler = new StandardScaler()
       .setInputCol(assembler.getOutputCol)
       .setOutputCol("features")
-      .setP(1.0)
+      .setWithStd(true)
+      .setWithMean(false)
 
-    this.setStages(indexers ++ Array(assembler, normalizer, model))
+    this.setStages(indexers ++ Array(assembler, standardScaler, model))
   }
 
   def this(model: PipelineStage) = this(model, Constants.featureVariables.toArray)

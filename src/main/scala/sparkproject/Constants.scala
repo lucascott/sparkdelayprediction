@@ -8,10 +8,10 @@ object Constants {
   val moreDroppedVariables: Seq[String] = Seq("CRSDepTime", "CRSArrTime", "TailNum", "CancellationCode")
   val oneHotEncVariables: Seq[String] = Seq("UniqueCarrier", "Origin", "Dest")
   val featureVariables: Seq[String] = Seq("Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
-    "DepDelay", "TaxiOut", "UniqueCarrierEnc") //"CRSElapsedTime", "OriginEnc", "DestEnc", "Distance")
+    "DepDelay", "TaxiOut", "UniqueCarrierEnc", "OriginEnc") //"CRSElapsedTime", "DestEnc", "Distance")
   val labelVariable: String = "ArrDelay"
   val predictionCol = "prediction"
   val metric: String = "rmse"
-  val trainTestSplit = Array(0.7, 0.3)
+  val trainTestSplit = Array(0.8, 0.2)
   val cvFolds = 5
 }

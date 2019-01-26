@@ -18,7 +18,7 @@ object TrainMode extends SparkSessionWrapper {
     val lr = new LinearRegression()
       .setLabelCol(Constants.labelVariable)
       .setPredictionCol(Constants.predictionCol)
-      .setMaxIter(10)
+      .setMaxIter(20)
 
     val pgLr = new ParamGridBuilder()
       .addGrid(lr.regParam, Array(0.1, 0.01))
@@ -31,7 +31,7 @@ object TrainMode extends SparkSessionWrapper {
       .setPredictionCol(Constants.predictionCol)
 
     val pgrFor = new ParamGridBuilder()
-      .addGrid(rFor.numTrees, Array(5))
+      .addGrid(rFor.numTrees, Array(5, 10))
       .addGrid(rFor.maxDepth, Array(5, 10))
       .build()
 
