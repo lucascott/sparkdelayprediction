@@ -47,8 +47,8 @@ object TrainMode extends SparkSessionWrapper {
 
     val models: Array[CrossValidatorModel] = RegressionTrainFactory.setTrainDataset(train).train(Array(
       (lr, pgLr),
-      (rFor, pgrFor)
-        (gBoost, pggBoost)
+      (rFor, pgrFor),
+      (gBoost, pggBoost)
     ))
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
