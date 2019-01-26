@@ -61,10 +61,6 @@ object App extends SparkSessionWrapper {
       // LABEL
       .withColumn("ArrDelay", $"ArrDelay".cast("int"))
 
-    flights.printSchema
-
-    flights.select("ArrDelay").withColumnRenamed("Diverted", "Div").printSchema
-
     if (conf.mode.equals("train")) {
       TrainMode.run(flights, conf)
     }

@@ -1,8 +1,7 @@
 package sparkproject.core
 
 import org.apache.spark.ml.PipelineModel
-import org.apache.spark.ml.classification.{GBTClassifier, LogisticRegression}
-import org.apache.spark.ml.regression.{LinearRegression, RandomForestRegressor}
+import org.apache.spark.ml.regression.{GBTRegressor, LinearRegression, RandomForestRegressor}
 import org.apache.spark.ml.tuning.{CrossValidatorModel, ParamGridBuilder}
 import org.apache.spark.sql.DataFrame
 import sparkproject.evaluation.TestEvaluator
@@ -26,17 +25,6 @@ object TrainMode extends SparkSessionWrapper {
       .addGrid(lr.elasticNetParam, Array(0.5))
       .build()
 
-    // Logistic Regression
-    val logr = new LogisticRegression()
-      .setLabelCol(Constants.labelVariable)
-      .setPredictionCol(Constants.predictionCol)
-      .setMaxIter(10)
-
-    val pgLogr = new ParamGridBuilder()
-      .addGrid(logr.regParam, Array(0.1, 0.01, 0.001, 0.0))
-      .addGrid(logr.elasticNetParam, Array(0.0, 0.5, 1.0))
-      .build()
-
     // Random Forest Regression
     val rFor = new RandomForestRegressor()
       .setLabelCol(Constants.labelVariable)
@@ -47,8 +35,8 @@ object TrainMode extends SparkSessionWrapper {
       .addGrid(rFor.maxDepth, Array(20))
       .build()
 
-    // Random Forest Regression
-    val gBoost = new GBTClassifier()
+    // Gradient Boosting Tree Regression
+    val gBoost = new GBTRegressor()
       .setLabelCol(Constants.labelVariable)
       .setPredictionCol(Constants.predictionCol)
 
@@ -59,9 +47,8 @@ object TrainMode extends SparkSessionWrapper {
 
     val models: Array[CrossValidatorModel] = RegressionTrainFactory.setTrainDataset(train).train(Array(
       (lr, pgLr),
-      //(logr, pgLogr),
       (rFor, pgrFor)
-      //(gBoost, pggBoost)
+        (gBoost, pggBoost)
     ))
 
     val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
