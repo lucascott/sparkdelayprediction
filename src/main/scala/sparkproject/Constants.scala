@@ -7,8 +7,8 @@ object Constants {
     "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay", "LateAircraftDelay")
   val moreDroppedVariables: Seq[String] = Seq("CRSDepTime", "CRSArrTime", "TailNum", "CancellationCode")
   val oneHotEncVariables: Seq[String] = Seq("UniqueCarrier", "Origin", "Dest")
-  val featureVariables: Seq[String] = Seq("Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSElapsedTime",
-    "ArrDelay", "DepDelay", "Distance", "TaxiOut", "UniqueCarrierEnc", "OriginEnc", "DestEnc")
+  val featureVariables: Seq[String] = Seq("Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
+    "DepDelay", "TaxiOut", "UniqueCarrierEnc") //"CRSElapsedTime", "OriginEnc", "DestEnc", "Distance")
   val labelVariable: String = "ArrDelay"
   val predictionCol = "prediction"
   val metric: String = "rmse"
