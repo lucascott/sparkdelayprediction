@@ -1,7 +1,7 @@
 package sparkproject.core
 
 import org.apache.spark.ml.PipelineModel
-import org.apache.spark.ml.regression.{GBTRegressor, LinearRegression, RandomForestRegressor}
+import org.apache.spark.ml.regression.{GBTRegressor, GeneralizedLinearRegression, LinearRegression, RandomForestRegressor}
 import org.apache.spark.ml.tuning.{CrossValidatorModel, ParamGridBuilder}
 import org.apache.spark.sql.DataFrame
 import sparkproject.evaluation.TestEvaluator
@@ -21,8 +21,20 @@ object TrainMode extends SparkSessionWrapper {
       .setMaxIter(20)
 
     val pgLr = new ParamGridBuilder()
-      .addGrid(lr.regParam, Array(0.1, 0.01))
+      .addGrid(lr.regParam, Array(0.3, 0.1))
       .addGrid(lr.elasticNetParam, Array(0.1, 0.5))
+      .build()
+
+    // Generalized Linear Regression
+    val glr = new GeneralizedLinearRegression()
+      .setLabelCol(Constants.labelVariable)
+      .setPredictionCol(Constants.predictionCol)
+      .setFamily("gaussian")
+      .setLink("identity")
+      .setMaxIter(20)
+
+    val pgGlr = new ParamGridBuilder()
+      .addGrid(glr.regParam, Array(0.3, 0.1))
       .build()
 
     // Random Forest Regression
@@ -45,19 +57,21 @@ object TrainMode extends SparkSessionWrapper {
       .addGrid(gBoost.maxDepth, Array(5, 10))
       .build()
 
-    val models: Array[CrossValidatorModel] = RegressionTrainFactory.setTrainDataset(train).train(Array(
-      (lr, pgLr),
-      (rFor, pgrFor)
-      //(gBoost, pggBoost)
+    val models: Array[(String, CrossValidatorModel)] = RegressionTrainFactory.setTrainDataset(train).train(Array(
+      //("LM", lr, pgLr),
+      ("GLM", glr, pgGlr)
+      //("RF", rFor, pgrFor)
+      //("GB", gBoost, pggBoost)
     ))
 
-    val predArr: Array[(String, DataFrame)] = models.map(x => (x.uid, x.transform(test)))
+    val predArr: Array[(String, DataFrame)] = models.map(x => (x._1, x._2.transform(test)))
 
     TestEvaluator.evaluate(predArr)
 
     // Now we can optionally save the fitted pipeline to disk
     if (!conf.export.isEmpty) {
-      models.foreach(x => x.bestModel.asInstanceOf[PipelineModel].write.overwrite().save(s"${conf.export}/${x.uid}"))
+      val t: Long = System.currentTimeMillis / 1000
+      models.foreach(x => x._2.bestModel.asInstanceOf[PipelineModel].write.overwrite().save(s"${conf.export}/${x._1}_$t"))
     }
   }
 

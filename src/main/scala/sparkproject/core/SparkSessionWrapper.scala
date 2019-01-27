@@ -9,6 +9,6 @@ trait SparkSessionWrapper {
     SparkSession
       .builder()
       .appName(Constants.projectName)
-      .master("local[*]")
+      //s.master("local[*]")
       .getOrCreate()
 }
