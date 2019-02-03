@@ -1,30 +1,43 @@
 package sparkproject.preprocessing
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import sparkproject.Constants
+import sparkproject.core.SparkSessionWrapper
 
-object Preprocessing {
+object Preprocessing extends SparkSessionWrapper {
 
-  def run(_ds: DataFrame, spark: SparkSession): DataFrame = {
+  def run(_ds: DataFrame): DataFrame = {
+
     import spark.implicits._
+
+    var ds = _ds.drop(Constants.prohibitedVariables: _*).drop(Constants.moreDroppedVariables: _*)
+
+    ds = ds.filter('Diverted === 0).drop("Diverted")
+    ds = ds.filter('Cancelled === 0).drop("Cancelled")
+
+    val nullValuesDf = ds.filter('ArrDelay.isNull)
+    if (nullValuesDf.count() > 0) {
+      println("[INFO] There are still have null values.")
+      nullValuesDf.show()
+      println(s"[INFO] Removing rows with remaining null values on")
+      ds = ds.filter('ArrDelay.isNotNull)
+    }
+
     // Converts from hhmm to total minutes from midnight
-    val toMin = udf(
-      (hhmmString: String) => {
-        val hours =
-          if (hhmmString.length <= 2)
-            0
-          else
-            hhmmString.substring(0, hhmmString.length - 2).toInt
-        hours * 60 + hhmmString.takeRight(2).toInt
-      })
+    val toMin = udf((hhmmString: String) => {
+      val hours =
+        if (hhmmString.length <= 2)
+          0
+        else
+          hhmmString.substring(0, hhmmString.length - 2).toInt
+      hours * 60 + hhmmString.takeRight(2).toInt
+    })
 
-    val ds = _ds.drop(Constants.prohibitedVariables: _*)
-      .withColumn("DepMin", toMin($"DepTime"))
+    ds = ds.withColumn("DepTime", toMin('DepTime))
+      .withColumn("DepTime", 'DepTime.cast("int"))
 
-    // maps catergorical attributes to int from 0 to +inf
-    val enc_ds: DataFrame = new EncodingPipeline(Constants.oneHotEncVariables: _*).fit(ds).transform(ds)
-    enc_ds
+    ds
   }
 
 }
